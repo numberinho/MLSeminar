@@ -1,14 +1,23 @@
 library(tidyverse)
 library(tidymodels)
 
-clean_data <- feather::read_feather("Seminar/clean_data.feather") %>%
+if(Sys.info()["nodename"] == "Simons-MacBook-Pro.local"){
+clean_data <- feather::read_feather("clean_data.feather") %>%
   mutate(
     day = lubridate::day(owner_since),
     month = lubridate::month(owner_since),
     quarter = lubridate::quarter(owner_since),
     year = lubridate::year(owner_since)
   )
-
+} else {
+  clean_data <- feather::read_feather("Seminar/clean_data.feather") %>%
+    mutate(
+      day = lubridate::day(owner_since),
+      month = lubridate::month(owner_since),
+      quarter = lubridate::quarter(owner_since),
+      year = lubridate::year(owner_since)
+    )
+}
 
 data_split <- initial_split(clean_data, prop = 0.80)
 
