@@ -19,10 +19,12 @@ if (Sys.info()["nodename"] == "Simons-MacBook-Pro.local") {
     )
 }
 
-data_split <- initial_split(clean_data %>% arrange(player_slug) %>% head(100000) %>% drop_na(), prop = 0.75)
+clean_data %>% distinct(player_slug) %>% sample_n(200)
 
-data_train <- clean_data %>% filter(owner_since < "2022-04-01")
-data_test <- clean_data %>% filter(owner_since >= "2022-04-01")
+sample <- distinct(clean_data, player_slug) %>% sample_n(200)
+
+data_train <- clean_data %>% inner_join(sample) %>% filter(owner_since < "2022-04-01")
+data_test <- clean_data %>% inner_join(sample) %>% filter(owner_since >= "2022-04-01")
 
 rf_settings <- rand_forest(mode = "regression", mtry = 3, trees = 500) %>%
   set_engine("ranger")
@@ -36,15 +38,16 @@ randomForrestFit <-
 
 test_results <-
   data_test %>%
+  filter(player_slug %in% data_train$player_slug) %>%
   bind_cols(
-    predict(randomForrestFit, new_data = data_test)
+    predict(randomForrestFit, new_data = data_test %>% filter(player_slug %in% data_train$player_slug))
   )
-
-test_results  %>% pull(player_slug)
 
 test_results %>% metrics(truth = EUR, estimate = .pred)
 
-v <- "alassane-plea" 
+data_test %>% distinct(player_slug) %>% pull()
+
+v <- "sven-michel"
 
 test_results %>%
   filter(player_slug == v) %>%

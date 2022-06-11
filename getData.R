@@ -41,22 +41,23 @@ fix_score <- function(gameWeeks, score){
     arrange(gameWeek) %>%
     left_join(score, by = c("gameWeek", "player_slug")) %>%
     group_by(player_slug) %>%
-    mutate(scoreDate = ifelse(is.na(score),NA,endDate)) %>%
+    mutate(last_scoreDays = ifelse(is.na(score),NA,endDate)) %>%
     mutate(lastScore = score, lastMins = mins_played) %>%
     mutate(cumScore = replace_na(score, 0),
            cumMins = replace_na(mins_played, 0)) %>%
     mutate(cumScore = cumsum(cumScore),
            cumMins = cumsum(cumMins)) %>%
-    fill(scoreDate, .direction = "down") %>%
+    fill(last_scoreDays, .direction = "down") %>%
     fill(lastScore, .direction = "down") %>%
     fill(lastMins, .direction = "down") %>%
-    mutate(scoreDate = as.Date(scoreDate,"1970-01-01")) %>%
+    mutate(last_scoreDays = as.Date(last_scoreDays,"1970-01-01")) %>%
+    mutate(last_scoreDays = as.numeric(endDate-last_scoreDays)) %>%
     ungroup() %>%
-    select(gameWeek, player_slug, lastScore, lastMins, cumScore, cumMins)
+    select(gameWeek,last_scoreDays, player_slug, lastScore, lastMins, cumScore, cumMins)
 }
 
-fixed_score <- fix_score(gameWeeks, score)
 
+fixed_score <- fix_score(gameWeeks, score)
 
 sorare_data <- transfer %>%
   mutate(gameWeek = gameWeek-1) %>%

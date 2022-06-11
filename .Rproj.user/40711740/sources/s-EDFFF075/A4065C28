@@ -1,0 +1,24 @@
+{
+    "id": "A4065C28",
+    "path": "~/R Projekte/MLSeminar/getData.R",
+    "project_path": "getData.R",
+    "type": "r_source",
+    "hash": "3581851913",
+    "contents": "",
+    "dirty": false,
+    "created": 1654986467590.0,
+    "source_on_save": false,
+    "relative_order": 3,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1654986862,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1654986862581,
+    "read_only": false,
+    "read_only_alternatives": []
+}
