@@ -9,7 +9,6 @@ clean_data <- feather::read_feather("Seminar/clean_data.feather") %>%
     year = lubridate::year(owner_since)
   )
 
-
 data_split <- initial_split(clean_data, prop = 0.80)
 
 data_train <- training(data_split)
