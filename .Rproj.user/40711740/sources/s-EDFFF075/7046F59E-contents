@@ -19,12 +19,10 @@ if (Sys.info()["nodename"] == "Simons-MacBook-Pro.local") {
     )
 }
 
-
-
 data_split <- initial_split(clean_data %>% arrange(player_slug) %>% head(100000) %>% drop_na(), prop = 0.75)
 
-data_train <- training(data_split)
-data_test <- testing(data_split)
+data_train <- clean_data %>% filter(owner_since < "2022-04-01")
+data_test <- clean_data %>% filter(owner_since >= "2022-04-01")
 
 rf_settings <- rand_forest(mode = "regression", mtry = 3, trees = 500) %>%
   set_engine("ranger")
