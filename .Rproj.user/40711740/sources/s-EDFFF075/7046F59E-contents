@@ -19,7 +19,7 @@ if (Sys.info()["nodename"] == "Simons-MacBook-Pro.local") {
     )
 }
 
-clean_data %>% distinct(player_slug) %>% sample_n(200)
+clean_data %>% select(last_scoreDays)
 
 sample <- distinct(clean_data, player_slug) %>% sample_n(200)
 

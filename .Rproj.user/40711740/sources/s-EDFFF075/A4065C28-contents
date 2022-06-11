@@ -66,9 +66,10 @@ sorare_data <- transfer %>%
          lastMins = replace_na(lastMins, 0),
          cumScore = replace_na(cumScore, 0),
          cumMins = replace_na(cumMins, 0)) %>%
-  left_join(market_globals %>% mutate(owner_since = owner_since+1), by = "owner_since") #offset "last"
+  left_join(market_globals %>% mutate(owner_since = owner_since+1), by = "owner_since") %>% #offset "last"
+  select(-player_opta_uuid)
 
-feather::write_feather(sorare_data, "sorare_data.feather")
+feather::write_feather(sorare_data, "clean_data.feather")
 
 
 

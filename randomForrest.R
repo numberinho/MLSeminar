@@ -19,7 +19,7 @@ if (Sys.info()["nodename"] == "Simons-MacBook-Pro.local") {
     )
 }
 
-clean_data %>% distinct(player_slug) %>% sample_n(200)
+clean_data %>% select(last_scoreDays)
 
 sample <- distinct(clean_data, player_slug) %>% sample_n(200)
 
@@ -47,14 +47,17 @@ test_results %>% metrics(truth = EUR, estimate = .pred)
 
 data_test %>% distinct(player_slug) %>% pull()
 
-v <- "sven-michel"
-
 test_results %>%
-  filter(player_slug == v) %>%
+  bind_rows(data_train) %>%
+  filter(player_slug == sample_n(test_results %>% distinct(player_slug),1)$player_slug) %>%
   filter(card_rarity == "limited") %>%
-  ggplot(aes(x = owner_since)) +
+  ggplot(aes(x = hms,color=player_slug)) +
   geom_line(aes(y = EUR), color = "#7f3030") +
-  geom_line(aes(y = 10^.pred))
+  geom_line(aes(y = 10^.pred))+
+  scale_x_datetime(breaks="1 week")+
+  theme(axis.text.x = element_text(angle=90))
+
+clean_data %>% filter(player_slug == "karim-bellarabi") %>% view
 
 
 
