@@ -22,7 +22,7 @@ FROM
 	sorare_gameWeeks gw on gw.startDate < owner_since and gw.endDate > owner_since
 WHERE
     league_slug = 'bundesliga-de'
-        AND (card_rarity = 'limited' or card_rarity = 'rare');"
+        AND (card_rarity = 'limited');"
 
 gameWeeks_sql <- "SELECT gameWeek, endDate FROM datenbank.sorare_gameWeeks;"
 

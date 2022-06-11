@@ -69,7 +69,11 @@ sorare_data <- transfer %>%
   left_join(market_globals %>% mutate(owner_since = owner_since+1), by = "owner_since") %>% #offset "last"
   select(-player_opta_uuid)
 
-feather::write_feather(sorare_data, "clean_data.feather")
+source("clean_outliers.R")
+
+clean_data <- cleanup_data(sorare_data)
+
+feather::write_feather(clean_data, "clean_data.feather")
 
 
 
