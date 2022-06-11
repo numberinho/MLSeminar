@@ -23,7 +23,8 @@ detect_outliers <- function(data){
     group_by(player_slug, card_rarity) %>%
     group_map(~customLoess(.x),.keep = T) %>%
     bind_rows() %>%
-    filter(EUR > fit*0.2, EUR < fit*1.5) %>%
+    filter(EUR > fit*0.2 | card_serial == 1) %>%
+    filter(EUR < fit*1.5 | card_serial == 1) %>%
     select(-fit)
 }
 
@@ -34,25 +35,22 @@ clean_data <- detect_outliers(sorare_data) %>%
   mutate(timeStamp = row_number()) %>%
   ungroup()
 
-clean_data
-
 feather::write_feather(clean_data, "clean_data.feather")
 
 clean_data %>%
-  filter(player_slug == "mats-hummels") %>%
+  filter(player_slug == "danny-blum") %>%
   filter(card_rarity == "limited") %>%
-  mutate(lagEUR = lag(EUR)) %>%
-  arrange(owner_since) %>%
+  arrange(hms) %>%
   #group_by(player_slug, card_rarity) %>%
-  #group_map(~customLoess(.x)) %>%
-  #bind_rows() %>%
+  #group_map(~customLoess(.x),.keep = T) %>%
+  bind_rows() %>%
   #filter(EUR > fit*0.1, EUR < fit*1.5) %>%
-  ggplot(aes(x=owner_since, y=EUR))+
+  ggplot(aes(x=hms, y=EUR))+
   #geom_line(aes(y=lagEUR),color="red")+
   geom_line()+
-  #geom_smooth(se = F, span=.15)+
+  geom_smooth(se = F, span=.15)+
   #geom_line(aes(y=fit))+
-  scale_x_date(breaks="2 week")+
+  scale_x_datetime(breaks="2 week")+
   theme(axis.text.x = element_text(angle=20))
 
 

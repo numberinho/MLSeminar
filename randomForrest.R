@@ -19,12 +19,11 @@ if (Sys.info()["nodename"] == "Simons-MacBook-Pro.local") {
     )
 }
 
-clean_data %>% select(last_scoreDays)
-
-sample <- distinct(clean_data, player_slug) %>% sample_n(200)
+#sample <- distinct(clean_data, player_slug) %>% sample_n(300)
+sample <- distinct(clean_data, player_slug)
 
 data_train <- clean_data %>% inner_join(sample) %>% filter(owner_since < "2022-04-01")
-data_test <- clean_data %>% inner_join(sample) %>% filter(owner_since >= "2022-04-01")
+data_test <- clean_data %>% inner_join(sample) %>% filter(owner_since > "2022-04-01")
 
 rf_settings <- rand_forest(mode = "regression", mtry = 3, trees = 500) %>%
   set_engine("ranger")
@@ -38,9 +37,9 @@ randomForrestFit <-
 
 test_results <-
   data_test %>%
-  filter(player_slug %in% data_train$player_slug) %>%
+  filter(player_slug %in% randomForrestFit$preproc$xlevels$player_slug) %>%
   bind_cols(
-    predict(randomForrestFit, new_data = data_test %>% filter(player_slug %in% data_train$player_slug))
+    predict(randomForrestFit, new_data = data_test %>% filter(player_slug %in% randomForrestFit$preproc$xlevels$player_slug))
   )
 
 test_results %>% metrics(truth = EUR, estimate = .pred)
@@ -57,7 +56,14 @@ test_results %>%
   scale_x_datetime(breaks="1 week")+
   theme(axis.text.x = element_text(angle=90))
 
-clean_data %>% filter(player_slug == "karim-bellarabi") %>% view
+test_results %>%
+  bind_rows(data_train) %>%
+  filter(player_slug == "philipp-lienhart") %>%
+  filter(card_rarity == "limited")
+
+data_train %>% filter(player_slug == "philipp-lienhart")
+
+clean_data %>% filter(player_slug == "danny-blum")
 
 
 
