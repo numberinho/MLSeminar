@@ -21,12 +21,12 @@ if (Sys.info()["nodename"] == "Simons-MacBook-Pro.local") {
 
 
 
-data_split <- initial_split(clean_data, prop = 0.80)
+data_split <- initial_split(clean_data %>% arrange(player_slug) %>% head(100000) %>% drop_na(), prop = 0.75)
 
 data_train <- training(data_split)
 data_test <- testing(data_split)
 
-rf_settings <- rand_forest(mode = "regression", mtry = .preds(), trees = 500) %>%
+rf_settings <- rand_forest(mode = "regression", mtry = 3, trees = 500) %>%
   set_engine("ranger")
 
 randomForrestFit <-
@@ -37,20 +37,23 @@ randomForrestFit <-
   )
 
 test_results <-
-  ames_test %>%
+  data_test %>%
   bind_cols(
-    predict(rf_xy_fit, new_data = ames_test %>% select(timeStamp, player_slug, card_rarity, player_position))
+    predict(randomForrestFit, new_data = data_test)
   )
 
-test_results %>% slice(1:5)
+test_results  %>% pull(player_slug)
 
 test_results %>% metrics(truth = EUR, estimate = .pred)
 
-v <- "mats-hummels"
+v <- "alassane-plea" 
 
 test_results %>%
   filter(player_slug == v) %>%
   filter(card_rarity == "limited") %>%
   ggplot(aes(x = owner_since)) +
-  geom_line(aes(y = log10(EUR)), color = "#7f3030") +
-  geom_line(aes(y = .pred))
+  geom_line(aes(y = EUR), color = "#7f3030") +
+  geom_line(aes(y = 10^.pred))
+
+
+
