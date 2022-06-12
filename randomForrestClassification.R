@@ -14,7 +14,7 @@ data_test <- clean_data %>%
   inner_join(sample) %>%
   filter(owner_since >= "2022-04-01")
 
-rf_settings <- rand_forest(mode = "regression", mtry = 10, trees = 501) %>%
+rf_settings <- rand_forest(mode = "regression", mtry = 5, trees = 501) %>%
   set_engine("ranger")
 
 randomForrestFit <-
