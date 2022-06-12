@@ -112,7 +112,8 @@ compute_lagged <- function(data) {
       EUR_lag_6 = lag(EUR_mean, 6),
       EUR_lag_7 = lag(EUR_mean, 7)
     ) %>%
-    ungroup()
+    ungroup() %>%
+    select(-EUR_mean)
 
   data %>%
     left_join(means, by = c("owner_since", "player_slug"))

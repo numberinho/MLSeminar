@@ -29,6 +29,38 @@ gameWeeks <- dbGetQuery(con, gameWeeks_sql) %>%
   mutate(endDate = as.Date(endDate))
 dbDisconnect(con)
 
+# clean outliers
+
+customLoess <- function(data) {
+  if (nrow(data) > 10) {
+    # define the model
+    model <- loess(EUR ~ as.numeric(owner_since),
+                   data = data,
+                   span = .1
+    )
+    
+    # predict fitted values for each observation in the original dataset
+    return(mutate(data, fit = predict(model, se = F)))
+  } else {
+    return(mutate(data, fit = EUR))
+  }
+}
+
+# applies "outlier function" to groups and filter
+detect_outliers <- function(data) {
+  data %>%
+    arrange(hms) %>%
+    group_by(player_slug, card_rarity) %>%
+    group_map(~ customLoess(.x), .keep = T) %>%
+    bind_rows() %>%
+    filter(EUR > fit * 0.2 | card_serial == 1) %>%
+    filter(EUR < fit * 1.5 | card_serial == 1) %>%
+    select(-fit)
+}
+
+data_no_outliers <- transfer %>% detect_outliers()
+
+
 # function to calculate market globals
 get_market_globals <- function(transfer) {
   transfer %>%
@@ -43,7 +75,7 @@ get_market_globals <- function(transfer) {
     mutate(timeStamp = row_number())
 }
 
-market_globals <- get_market_globals(transfer)
+market_globals <- get_market_globals(data_no_outliers)
 
 # function to fix the score per gameweek
 fix_score <- function(gameWeeks, score) {
@@ -74,11 +106,29 @@ fixed_score <- fix_score(gameWeeks, score)
 
 # put all together
 
-sorare_data <- transfer %>%
-  group_by(player_slug, club_slug, owner_since,gameWeek, player_position, player_age) %>%
-  summarise(EUR = mean(EUR)) %>%
+mean_prices <- data_no_outliers %>%
+  group_by(player_slug, club_slug, owner_since, gameWeek, player_position, player_age) %>%
+  summarise(EUR = mean(EUR),
+            player_trades = n()) %>%
+  ungroup() %>%
+  mutate(lastTrade = owner_since, player_trades = ifelse(is.na(player_trades),0,player_trades))
+
+
+agg_data <- mean_prices %>% distinct(owner_since) %>%
+  crossing(mean_prices %>% distinct(player_slug)) %>%
+  left_join(mean_prices) %>%
+  group_by(player_slug) %>%
+  fill(everything(), .direction="down") %>% 
+  ungroup() %>%
+  mutate(lastTrade = as.numeric(owner_since-lastTrade)) %>%
+  mutate(player_trades = ifelse(lastTrade != 0, 0, player_trades)) %>%
+  group_by(player_slug) %>%
+  mutate(lastTrade = lag(lastTrade),
+         player_trades = lag(player_trades)) %>%
+  ungroup() %>%
   mutate(gameWeek = gameWeek - 1) %>%
   left_join(fixed_score, by = c("gameWeek", "player_slug")) %>%
+  select(-gameWeek) %>%
   mutate(
     lastScore = replace_na(lastScore, 0),
     lastMins = replace_na(lastMins, 0),
@@ -91,13 +141,7 @@ sorare_data <- transfer %>%
     month = lubridate::month(owner_since),
     quarter = lubridate::quarter(owner_since),
     year = lubridate::year(owner_since)
-  )
-
-source("clean_outliers.R")
-
-# clean outliers
-clean_data <- cleanup_data(sorare_data)
-
+  ) 
 
 # compute lagged EUR values
 compute_lagged <- function(data) {
@@ -114,14 +158,16 @@ compute_lagged <- function(data) {
       EUR_lag_6 = lag(EUR_mean, 6),
       EUR_lag_7 = lag(EUR_mean, 7)
     ) %>%
-    ungroup()
+    ungroup() %>%
+    select(-EUR_mean)
   
   data %>%
     left_join(means, by = c("owner_since", "player_slug"))
 }
 
 # final clean dataframe
-clean_data <- compute_lagged(sorare_data)
+clean_data <- compute_lagged(agg_data)
+
 feather::write_feather(clean_data, "clean_data.feather")
 
 
@@ -137,8 +183,18 @@ clean_data %>%
   ggplot(aes(x=owner_since,y=mean))+
   geom_line()
 
-clean_data %>%
-  filter(player_slug == p) %>%
+transfer %>%
+  filter(player_slug == sample_n(transfer %>% distinct(player_slug), 1)$player_slug) %>%
   ggplot(aes(x=hms,y=EUR))+
-  geom_line()
+  geom_line()+
+  scale_x_datetime(breaks= "2 week")+
+  theme(axis.text.x = element_text(angle=40))
+
+clean_data %>%
+  drop_na() %>%
+  filter(player_slug == sample_n(clean_data %>% distinct(player_slug), 1)$player_slug) %>%
+  ggplot(aes(x=owner_since,y=EUR))+
+  geom_line()+
+  scale_x_date(breaks= "2 week")+
+  theme(axis.text.x = element_text(angle=40))
 

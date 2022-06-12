@@ -1,24 +1,24 @@
 {
-    "id": "A4065C28",
-    "path": "~/R Projekte/MLSeminar/getData.R",
-    "project_path": "getData.R",
+    "id": "04CE585E",
+    "path": "~/R Projekte/MLSeminar/sql_queries.R",
+    "project_path": "sql_queries.R",
     "type": "r_source",
-    "hash": "1753210222",
+    "hash": "294552502",
     "contents": "",
     "dirty": false,
-    "created": 1654986467590.0,
+    "created": 1655041832535.0,
     "source_on_save": false,
-    "relative_order": 2,
+    "relative_order": 8,
     "properties": {
         "source_window_id": "",
         "Source": "Source"
     },
     "folds": "",
-    "lastKnownWriteTime": 1655037249,
+    "lastKnownWriteTime": 1655041837,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1655037249421,
+    "last_content_update": 1655041837039,
     "read_only": false,
     "read_only_alternatives": []
 }

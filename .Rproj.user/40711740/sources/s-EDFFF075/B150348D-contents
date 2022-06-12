@@ -8,13 +8,13 @@ sample <- distinct(clean_data, player_slug)
 
 data_train <- clean_data %>%
   inner_join(sample) %>%
-  filter(owner_since < "2022-05-01")
+  filter(owner_since < "2022-04-01")
 
 data_test <- clean_data %>%
   inner_join(sample) %>%
-  filter(owner_since >= "2022-05-01")
+  filter(owner_since >= "2022-04-01")
 
-rf_settings <- rand_forest(mode = "regression", mtry = 3, trees = 500) %>%
+rf_settings <- rand_forest(mode = "regression", mtry = 10, trees = 501) %>%
   set_engine("ranger")
 
 randomForrestFit <-
@@ -38,6 +38,8 @@ randomForrestFit <-
     + EUR_lag_6
     + EUR_lag_7
     + eth_exchange
+    + player_trades
+    + lastTrade
     + trades
     + timeStamp
     + day
@@ -52,22 +54,20 @@ test_results <-
   filter(player_slug %in% randomForrestFit$preproc$xlevels$player_slug) %>%
   bind_cols(
     predict(randomForrestFit, new_data = data_test %>% filter(player_slug %in% randomForrestFit$preproc$xlevels$player_slug))
-  )
+  ) %>%
+  mutate(.pred = 10^.pred)
 
 test_results %>% metrics(truth = EUR, estimate = .pred)
 
-data_test %>%
-  distinct(player_slug) %>%
-  pull()
 
 test_results %>%
   bind_rows(data_train) %>%
+  filter(!is.na(EUR)) %>%
   filter(player_slug == sample_n(test_results %>% distinct(player_slug), 1)$player_slug) %>%
-  filter(card_rarity == "limited") %>%
-  ggplot(aes(x = hms, color = player_slug)) +
+  ggplot(aes(x = owner_since, color = player_slug)) +
   geom_line(aes(y = EUR), color = "#7f3030") +
-  geom_line(aes(y = 10^.pred)) +
-  scale_x_datetime(breaks = "1 week") +
+  geom_line(aes(y = .pred)) +
+  scale_x_date(breaks = "1 week") +
   theme(axis.text.x = element_text(angle = 90))
 
 
@@ -75,7 +75,7 @@ test_results %>%
 test_results %>%
   #filter(player_slug == sample_n(test_results %>% distinct(player_slug), 1)$player_slug) %>%
   group_by(player_slug) %>%
-  arrange(hms) %>%
+  arrange(owner_since) %>%
   mutate(goesUP = ifelse(lag(EUR) < EUR,1,0),
          pgoesUP = ifelse(lag(EUR) < 10^.pred,1,0)) %>%
   ungroup() %>%

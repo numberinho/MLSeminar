@@ -112,7 +112,8 @@ compute_lagged <- function(data) {
       EUR_lag_6 = lag(EUR_mean, 6),
       EUR_lag_7 = lag(EUR_mean, 7)
     ) %>%
-    ungroup()
+    ungroup() %>%
+    select(-EUR_mean)
 
   data %>%
     left_join(means, by = c("owner_since", "player_slug"))
@@ -125,3 +126,18 @@ feather::write_feather(clean_data, "clean_data.feather")
 
 ## TODO put in one file
 # check iago
+
+p <- sample_n(test_results %>% distinct(player_slug), 1)$player_slug
+clean_data %>%
+  #filter(player_slug == p) %>%
+  group_by(owner_since, player_slug) %>%
+  summarise(mean = mean(EUR)) %>%
+  ungroup() %>%
+  ggplot(aes(x=owner_since,y=mean))+
+  geom_line()
+
+clean_data %>%
+  filter(player_slug == p) %>%
+  ggplot(aes(x=hms,y=EUR))+
+  geom_line()
+

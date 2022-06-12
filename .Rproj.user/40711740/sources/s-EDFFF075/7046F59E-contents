@@ -54,7 +54,8 @@ test_results <-
   filter(player_slug %in% randomForrestFit$preproc$xlevels$player_slug) %>%
   bind_cols(
     predict(randomForrestFit, new_data = data_test %>% filter(player_slug %in% randomForrestFit$preproc$xlevels$player_slug))
-  )
+  ) %>%
+  mutate(.pred = 10^.pred)
 
 test_results %>% metrics(truth = EUR, estimate = .pred)
 
@@ -68,7 +69,7 @@ test_results %>%
   filter(card_rarity == "limited") %>%
   ggplot(aes(x = hms, color = player_slug)) +
   geom_line(aes(y = EUR), color = "#7f3030") +
-  geom_line(aes(y = 10^.pred)) +
+  geom_line(aes(y = .pred)) +
   scale_x_datetime(breaks = "1 week") +
   theme(axis.text.x = element_text(angle = 90))
 
@@ -78,8 +79,8 @@ test_results %>%
   #filter(player_slug == sample_n(test_results %>% distinct(player_slug), 1)$player_slug) %>%
   group_by(player_slug) %>%
   arrange(hms) %>%
-  mutate(goesUP = ifelse(lag(EUR) < EUR,1,0),
-         pgoesUP = ifelse(lag(EUR) < 10^.pred,1,0)) %>%
+  mutate(goesUP = ifelse(EUR_lag_1 < EUR,1,0),
+         pgoesUP = ifelse(EUR_lag_1 < .pred,1,0)) %>%
   ungroup() %>%
   count(goesUP == pgoesUP) %>%
   drop_na() %>%
