@@ -9,6 +9,7 @@ sample <- distinct(clean_data, player_slug)
 data_train <- clean_data %>%
   inner_join(sample) %>%
   filter(owner_since < "2022-04-01")
+
 data_test <- clean_data %>%
   inner_join(sample) %>%
   filter(owner_since > "2022-04-01")
@@ -31,7 +32,7 @@ randomForrestFit <-
     + lastMins
     + cumScore
     + cumMins
-    + day1_meanEUR,
+    + day1_meanEUR
     + eth_exchange
     + trades
     + timeStamp
