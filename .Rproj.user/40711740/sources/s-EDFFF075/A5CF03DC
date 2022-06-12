@@ -3,7 +3,7 @@
     "path": "~/R Projekte/MLSeminar/neuralNetwork.R",
     "project_path": "neuralNetwork.R",
     "type": "r_source",
-    "hash": "1788343012",
+    "hash": "608766401",
     "contents": "",
     "dirty": false,
     "created": 1655023371346.0,
@@ -14,11 +14,11 @@
         "Source": "Source"
     },
     "folds": "",
-    "lastKnownWriteTime": 1655027366,
+    "lastKnownWriteTime": 1655033858,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1655027366952,
+    "last_content_update": 1655033858790,
     "read_only": false,
     "read_only_alternatives": []
 }

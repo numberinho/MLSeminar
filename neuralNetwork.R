@@ -16,7 +16,7 @@ data_test <- clean_data %>%
 nn_preprocessing <- 
   recipe(
     EUR ~
-    + player_slug
+      + player_slug
     + club_slug
     + player_position
     + player_age
@@ -27,6 +27,13 @@ nn_preprocessing <-
     + lastMins
     + cumScore
     + cumMins
+    + EUR_lag_1
+    + EUR_lag_2
+    + EUR_lag_3
+    + EUR_lag_4
+    + EUR_lag_5
+    + EUR_lag_6
+    + EUR_lag_7
     + eth_exchange
     + trades
     + timeStamp
@@ -37,7 +44,32 @@ nn_preprocessing <-
     data = data_train
   ) %>%
   step_dummy(c(club_slug, player_slug, player_position)) %>%
-  step_normalize(c(card_shirt, player_age, owner_number, last_scoreDays, lastScore, lastMins, cumScore, cumMins, eth_exchange,trades, timeStamp, day, month, quarter, year)) %>%
+  step_normalize(
+    c(
+      EUR_lag_1,
+      EUR_lag_2,
+      EUR_lag_3,
+      EUR_lag_4,
+      EUR_lag_5,
+      EUR_lag_6,
+      EUR_lag_7,
+      card_shirt,
+      player_age,
+      owner_number,
+      last_scoreDays,
+      lastScore,
+      lastMins,
+      cumScore,
+      cumMins,
+      eth_exchange,
+      trades,
+      timeStamp,
+      day,
+      month,
+      quarter,
+      year
+    )
+  ) %>%
   prep(training = data_train, retain = TRUE)
 
 # For validation:

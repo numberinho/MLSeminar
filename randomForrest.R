@@ -8,11 +8,11 @@ sample <- distinct(clean_data, player_slug)
 
 data_train <- clean_data %>%
   inner_join(sample) %>%
-  filter(owner_since < "2022-04-01")
+  filter(owner_since < "2022-05-01")
 
 data_test <- clean_data %>%
   inner_join(sample) %>%
-  filter(owner_since > "2022-04-01")
+  filter(owner_since >= "2022-05-01")
 
 rf_settings <- rand_forest(mode = "regression", mtry = 3, trees = 500) %>%
   set_engine("ranger")
@@ -72,11 +72,17 @@ test_results %>%
   scale_x_datetime(breaks = "1 week") +
   theme(axis.text.x = element_text(angle = 90))
 
+
+# simple metric
 test_results %>%
-  bind_rows(data_train) %>%
-  filter(player_slug == "philipp-lienhart") %>%
-  filter(card_rarity == "limited")
+  #filter(player_slug == sample_n(test_results %>% distinct(player_slug), 1)$player_slug) %>%
+  group_by(player_slug) %>%
+  arrange(hms) %>%
+  mutate(goesUP = ifelse(lag(EUR) < EUR,1,0),
+         pgoesUP = ifelse(lag(EUR) < 10^.pred,1,0)) %>%
+  ungroup() %>%
+  count(goesUP == pgoesUP) %>%
+  drop_na() %>%
+  mutate(n = n/sum(n))
 
-data_train %>% filter(player_slug == "philipp-lienhart")
 
-clean_data %>% filter(player_slug == "danny-blum")

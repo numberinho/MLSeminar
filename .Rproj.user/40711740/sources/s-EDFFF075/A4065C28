@@ -3,9 +3,9 @@
     "path": "~/R Projekte/MLSeminar/getData.R",
     "project_path": "getData.R",
     "type": "r_source",
-    "hash": "1469768014",
+    "hash": "503184133",
     "contents": "",
-    "dirty": false,
+    "dirty": true,
     "created": 1654986467590.0,
     "source_on_save": false,
     "relative_order": 3,
@@ -14,11 +14,11 @@
         "Source": "Source"
     },
     "folds": "",
-    "lastKnownWriteTime": 1655033460,
+    "lastKnownWriteTime": 1655034003,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1655033460846,
+    "last_content_update": 1655035855017,
     "read_only": false,
     "read_only_alternatives": []
 }
