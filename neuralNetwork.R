@@ -14,7 +14,7 @@ data_test <- clean_data %>%
   filter(owner_since > "2022-04-01")
 
 nn_settings <- mlp(epochs = 100, hidden_units = 5, dropout = 0.1) %>%
-  set_mode("classification") %>% 
+  set_mode("classification") %>%
   set_engine("keras", verbose = 1)
 
 neuralNetFit <-
