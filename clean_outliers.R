@@ -33,7 +33,6 @@ cleanup_data <- function(sorare_date){
   detect_outliers(sorare_data) %>%
     arrange(hms) %>%
     group_by(hms) %>%
-    mutate(timeStamp = row_number()) %>%
     ungroup()
 }
 

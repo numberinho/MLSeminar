@@ -31,7 +31,8 @@ get_market_globals <- function(transfer){
     summarise(eth_exchange = mean(EUR/ETH),
               trades = n()) %>%
     ungroup() %>%
-    arrange(owner_since)
+    arrange(owner_since) %>%
+    mutate(timeStamp = row_number())
 }
 
 market_globals <- get_market_globals(transfer)
@@ -61,6 +62,7 @@ fixed_score <- fix_score(gameWeeks, score)
 
 sorare_data <- transfer %>%
   mutate(gameWeek = gameWeek-1) %>%
+  mutate(card_shirt = ifelse(card_shirt == card_serial,T,F)) %>%
   left_join(fixed_score, by = c("gameWeek", "player_slug")) %>%
   mutate(lastScore = replace_na(lastScore, 0),
          lastMins = replace_na(lastMins, 0),
@@ -74,6 +76,10 @@ source("clean_outliers.R")
 clean_data <- cleanup_data(sorare_data)
 
 feather::write_feather(clean_data, "clean_data.feather")
+
+
+## TODO put in one file
+#check iago
 
 
 
