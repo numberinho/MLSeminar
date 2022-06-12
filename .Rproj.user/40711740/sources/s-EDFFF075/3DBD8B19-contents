@@ -1,0 +1,26 @@
+Viele Karten wurden von Sorare zwischen März und April in den Verkauf gegeben.
+
+
+Features:
+Normal:
+1 Spielername
+1 Club
+1 Alter
+1 Position
+1 Kartennummer
+1 Kartennummer == Shirtnummer
+
+Markteigenschaften:
+1 Trades am Vortag
+1 ETH-EUR Kurs
+Preis am Vortag?
+
+Performance im Spiel:
+1 Punkte in letztem Spiel
+1 Minuten in letztem Spiel
+1 Kumulierte Minuten bisher
+1 Kumulierte Punkte bisher
+
+Spieler Status?
+Verletzt
+Gesund

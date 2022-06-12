@@ -1,0 +1,24 @@
+{
+    "id": "A5CF03DC",
+    "path": "~/R Projekte/MLSeminar/neuralNetwork.R",
+    "project_path": "neuralNetwork.R",
+    "type": "r_source",
+    "hash": "1788343012",
+    "contents": "",
+    "dirty": false,
+    "created": 1655023371346.0,
+    "source_on_save": false,
+    "relative_order": 6,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1655027366,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1655027366952,
+    "read_only": false,
+    "read_only_alternatives": []
+}
