@@ -68,7 +68,7 @@ get_market_globals <- function(transfer) {
     group_by(owner_since) %>%
     summarise(
       eth_exchange = mean(EUR / ETH),
-      trades = n()
+      lastTotalTrades = n()
     ) %>%
     ungroup() %>%
     arrange(owner_since) %>%
@@ -83,7 +83,7 @@ fix_score <- function(gameWeeks, score) {
     arrange(gameWeek) %>%
     left_join(score, by = c("gameWeek", "player_slug")) %>%
     group_by(player_slug) %>%
-    mutate(last_scoreDays = ifelse(is.na(score), NA, endDate)) %>%
+    mutate(daysSinceLastScore = ifelse(is.na(score), NA, endDate)) %>%
     mutate(lastScore = score, lastMins = mins_played) %>%
     mutate(
       cumScore = replace_na(score, 0),
@@ -93,55 +93,71 @@ fix_score <- function(gameWeeks, score) {
       cumScore = cumsum(cumScore),
       cumMins = cumsum(cumMins)
     ) %>%
-    fill(last_scoreDays, .direction = "down") %>%
+    fill(daysSinceLastScore, .direction = "down") %>%
     fill(lastScore, .direction = "down") %>%
     fill(lastMins, .direction = "down") %>%
-    mutate(last_scoreDays = as.Date(last_scoreDays, "1970-01-01")) %>%
-    mutate(last_scoreDays = as.numeric(endDate - last_scoreDays)) %>%
+    mutate(daysSinceLastScore = as.Date(daysSinceLastScore, "1970-01-01")) %>%
+    mutate(daysSinceLastScore = as.numeric(endDate - daysSinceLastScore)) %>%
     ungroup() %>%
-    select(gameWeek, last_scoreDays, player_slug, lastScore, lastMins, cumScore, cumMins)
+    select(gameWeek, daysSinceLastScore, player_slug, lastScore, lastMins, cumScore, cumMins)
 }
 
 fixed_score <- fix_score(gameWeeks, score)
 
 # put all together
 
-mean_prices <- data_no_outliers %>%
-  group_by(player_slug, club_slug, owner_since, gameWeek, player_position, player_age) %>%
-  summarise(EUR = mean(EUR),
-            player_trades = n()) %>%
-  ungroup() %>%
-  mutate(lastTrade = owner_since, player_trades = ifelse(is.na(player_trades),0,player_trades))
+get_mean_data <- function(data){
+  data %>%
+    group_by(player_slug, club_slug, owner_since, gameWeek, player_position, player_age) %>%
+    summarise(EUR = mean(EUR),
+              lastPlayerTrades = n()) %>%
+    ungroup() %>%
+    mutate(daysSinceLastTrade = owner_since, lastPlayerTrades = ifelse(is.na(lastPlayerTrades),0,lastPlayerTrades))
+}
 
+mean_prices <- get_mean_data(data_no_outliers)
 
-agg_data <- mean_prices %>% distinct(owner_since) %>%
-  crossing(mean_prices %>% distinct(player_slug)) %>%
-  left_join(mean_prices) %>%
-  group_by(player_slug) %>%
-  fill(everything(), .direction="down") %>% 
-  ungroup() %>%
-  mutate(lastTrade = as.numeric(owner_since-lastTrade)) %>%
-  mutate(player_trades = ifelse(lastTrade != 0, 0, player_trades)) %>%
-  group_by(player_slug) %>%
-  mutate(lastTrade = lag(lastTrade),
-         player_trades = lag(player_trades)) %>%
-  ungroup() %>%
-  mutate(gameWeek = gameWeek - 1) %>%
-  left_join(fixed_score, by = c("gameWeek", "player_slug")) %>%
-  select(-gameWeek) %>%
-  mutate(
-    lastScore = replace_na(lastScore, 0),
-    lastMins = replace_na(lastMins, 0),
-    cumScore = replace_na(cumScore, 0),
-    cumMins = replace_na(cumMins, 0)
+fill_missing_down <- function(data){
+  crossing(
+    data %>% distinct(owner_since),
+    data %>% distinct(player_slug)
   ) %>%
+    left_join(data, by = c("owner_since", "player_slug")) %>%
+    group_by(player_slug) %>%
+    fill(everything(), .direction="down") %>% 
+    ungroup() %>% 
+    mutate(daysSinceLastTrade = as.numeric(owner_since-daysSinceLastTrade)) %>%
+    mutate(lastPlayerTrades = ifelse(daysSinceLastTrade > 0, 0, lastPlayerTrades)) %>%
+    filter(!is.na(EUR))
+}
+
+imputed_data <- fill_missing_down(mean_prices)
+
+agg_data <- imputed_data %>%
   left_join(market_globals %>% mutate(owner_since = owner_since + 1), by = "owner_since") %>% # offset "last"
   mutate(
     day = lubridate::day(owner_since),
     month = lubridate::month(owner_since),
     quarter = lubridate::quarter(owner_since),
     year = lubridate::year(owner_since)
-  ) 
+  ) %>%
+  group_by(player_slug) %>%
+  arrange(owner_since) %>%
+  mutate(daysSinceLastTrade = lag(daysSinceLastTrade),
+         lastPlayerTrades = lag(lastPlayerTrades),
+         lastTotalTrades = lag(lastTotalTrades)) %>%
+  ungroup() %>%
+  mutate(gameWeek = gameWeek - 1) %>%
+  left_join(fixed_score, by = c("gameWeek", "player_slug")) %>%
+  mutate(
+    lastPlayerTrades = replace_na(lastScore, 0),
+    lastScore = replace_na(lastScore, 0),
+    lastTotalTrades = replace_na(lastTotalTrades, 0),
+    lastMins = replace_na(lastMins, 0),
+    cumScore = replace_na(cumScore, 0),
+    cumMins = replace_na(cumMins, 0)
+  ) %>%
+  select(-gameWeek)
 
 # compute lagged EUR values
 compute_lagged <- function(data) {

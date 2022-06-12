@@ -25,9 +25,9 @@ randomForrestFit <-
     + club_slug
     + player_position
     + player_age
-    + last_scoreDays
-    + lastScore
-    + lastMins
+    + daysSinceLastScore #days past last score
+    + lastScore #last scored points
+    + lastMins #last played minutes
     + cumScore
     + cumMins
     + EUR_lag_1
@@ -38,9 +38,9 @@ randomForrestFit <-
     + EUR_lag_6
     + EUR_lag_7
     + eth_exchange
-    + player_trades
+    + lastPlayerTrades
+    + lastTotalTrades
     + lastTrade
-    + trades
     + timeStamp
     + day
     + month
