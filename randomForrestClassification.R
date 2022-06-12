@@ -20,32 +20,32 @@ rf_settings <- rand_forest(mode = "regression", mtry = 10, trees = 501) %>%
 randomForrestFit <-
   rf_settings %>%
   fit(
-    log10(EUR) ~     
-    + player_slug
+    log10(EUR) ~
+    +player_slug
     + club_slug
-    + player_position
-    + player_age
-    + daysSinceLastScore #days past last score
-    + lastScore #last scored points
-    + lastMins #last played minutes
-    + cumScore
-    + cumMins
-    + EUR_lag_1
-    + EUR_lag_2
-    + EUR_lag_3
-    + EUR_lag_4
-    + EUR_lag_5
-    + EUR_lag_6
-    + EUR_lag_7
-    + eth_exchange
-    + lastPlayerTrades
-    + lastTotalTrades
-    + lastTrade
-    + timeStamp
-    + day
-    + month
-    + quarter
-    + year,
+      + player_position
+      + player_age
+      + daysSinceLastScore # days past last score
+      + lastScore # last scored points
+      + lastMins # last played minutes
+      + cumScore # cumulated score until timepoint
+      + cumMins # cumulated minutes until timepoint
+      + EUR_lag_1
+      + EUR_lag_2
+      + EUR_lag_3
+      + EUR_lag_4
+      + EUR_lag_5
+      + EUR_lag_6
+      + EUR_lag_7
+      + eth_exchange # ETH - EUR exchange ratio
+      + lastPlayerTrades # amount of trades of this player yesterday
+      + daysSinceLastTrade # days since last trade of this player
+      + lastTotalTrades # amount of trades yesterday
+      + timeStamp # integer representing time
+      + day
+      + month
+      + quarter
+      + year,
     data = data_train
   )
 
@@ -73,14 +73,14 @@ test_results %>%
 
 # simple metric
 test_results %>%
-  #filter(player_slug == sample_n(test_results %>% distinct(player_slug), 1)$player_slug) %>%
+  # filter(player_slug == sample_n(test_results %>% distinct(player_slug), 1)$player_slug) %>%
   group_by(player_slug) %>%
   arrange(owner_since) %>%
-  mutate(goesUP = ifelse(lag(EUR) < EUR,1,0),
-         pgoesUP = ifelse(lag(EUR) < 10^.pred,1,0)) %>%
+  mutate(
+    goesUP = ifelse(lag(EUR) < EUR, 1, 0),
+    pgoesUP = ifelse(lag(EUR) < 10^.pred, 1, 0)
+  ) %>%
   ungroup() %>%
   count(goesUP == pgoesUP) %>%
   drop_na() %>%
-  mutate(n = n/sum(n))
-
-
+  mutate(n = n / sum(n))
