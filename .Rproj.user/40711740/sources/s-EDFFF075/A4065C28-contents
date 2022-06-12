@@ -68,7 +68,6 @@ sorare_data <- transfer %>%
          cumScore = replace_na(cumScore, 0),
          cumMins = replace_na(cumMins, 0)) %>%
   left_join(market_globals %>% mutate(owner_since = owner_since+1), by = "owner_since") %>% #offset "last"
-  mutate(card_shirt = ifelse(card_shirt == card_serial,T,F)) %>%
   mutate(
     day = lubridate::day(owner_since),
     month = lubridate::month(owner_since),
