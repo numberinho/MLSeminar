@@ -29,6 +29,7 @@ gameWeeks <- dbGetQuery(con, gameWeeks_sql) %>%
   mutate(endDate = as.Date(endDate))
 dbDisconnect(con)
 
+# function to calculate market globals
 get_market_globals <- function(transfer) {
   transfer %>%
     filter(EUR > 0, ETH > 0) %>%
@@ -44,6 +45,7 @@ get_market_globals <- function(transfer) {
 
 market_globals <- get_market_globals(transfer)
 
+# function to fix the score per gameweek
 fix_score <- function(gameWeeks, score) {
   crossing(gameWeeks, distinct(score, player_slug)) %>%
     arrange(gameWeek) %>%
@@ -68,9 +70,9 @@ fix_score <- function(gameWeeks, score) {
     select(gameWeek, last_scoreDays, player_slug, lastScore, lastMins, cumScore, cumMins)
 }
 
-
 fixed_score <- fix_score(gameWeeks, score)
 
+# put all together
 sorare_data <- transfer %>%
   mutate(gameWeek = gameWeek - 1) %>%
   left_join(fixed_score, by = c("gameWeek", "player_slug")) %>%
@@ -91,28 +93,33 @@ sorare_data <- transfer %>%
 
 source("clean_outliers.R")
 
+# clean outliers
 clean_data <- cleanup_data(sorare_data)
 
-compute_lagged <- function(data){
-  means <- data %>% group_by(player_slug, owner_since) %>%
+
+# compute lagged EUR values
+compute_lagged <- function(data) {
+  means <- data %>%
+    group_by(player_slug, owner_since) %>%
     summarise(EUR_mean = mean(EUR)) %>%
     arrange(owner_since) %>%
-    mutate(EUR_lag_1 = lag(EUR_mean),
-           EUR_lag_2 = lag(EUR_mean,2),
-           EUR_lag_3 = lag(EUR_mean,3),
-           EUR_lag_4 = lag(EUR_mean,4),
-           EUR_lag_5 = lag(EUR_mean,5),
-           EUR_lag_6 = lag(EUR_mean,6),
-           EUR_lag_7 = lag(EUR_mean,7)
-           ) %>%
+    mutate(
+      EUR_lag_1 = lag(EUR_mean),
+      EUR_lag_2 = lag(EUR_mean, 2),
+      EUR_lag_3 = lag(EUR_mean, 3),
+      EUR_lag_4 = lag(EUR_mean, 4),
+      EUR_lag_5 = lag(EUR_mean, 5),
+      EUR_lag_6 = lag(EUR_mean, 6),
+      EUR_lag_7 = lag(EUR_mean, 7)
+    ) %>%
     ungroup()
-  
+
   data %>%
     left_join(means, by = c("owner_since", "player_slug"))
 }
 
+# final clean dataframe
 clean_data <- compute_lagged(clean_data)
-
 feather::write_feather(clean_data, "clean_data.feather")
 
 

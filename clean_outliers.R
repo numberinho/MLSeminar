@@ -1,14 +1,16 @@
 library(tidyverse)
 
-#sorare_data <- feather::read_feather("sorare_data.feather")
+## functions to clean outliers
 
 # loess function & prediction that can be applied to grouped tibble
-customLoess <- function(data){
-  if(nrow(data) > 10){
+customLoess <- function(data) {
+  if (nrow(data) > 10) {
     # define the model
-    model <- loess(EUR ~ as.numeric(owner_since), data = data,
-                   span = .1)
-    
+    model <- loess(EUR ~ as.numeric(owner_since),
+      data = data,
+      span = .1
+    )
+
     # predict fitted values for each observation in the original dataset
     return(mutate(data, fit = predict(model, se = F)))
   } else {
@@ -17,28 +19,28 @@ customLoess <- function(data){
 }
 
 # applies "outlier function" to groups and filter
-detect_outliers <- function(data){
+detect_outliers <- function(data) {
   data %>%
     arrange(hms) %>%
     group_by(player_slug, card_rarity) %>%
-    group_map(~customLoess(.x),.keep = T) %>%
+    group_map(~ customLoess(.x), .keep = T) %>%
     bind_rows() %>%
-    filter(EUR > fit*0.2 | card_serial == 1) %>%
-    filter(EUR < fit*1.5 | card_serial == 1) %>%
+    filter(EUR > fit * 0.2 | card_serial == 1) %>%
+    filter(EUR < fit * 1.5 | card_serial == 1) %>%
     select(-fit)
 }
 
 # run
-cleanup_data <- function(sorare_date){
+cleanup_data <- function(sorare_date) {
   detect_outliers(sorare_data) %>%
     arrange(hms) %>%
     group_by(hms) %>%
     ungroup()
 }
 
-#feather::write_feather(clean_data, "clean_data.feather")
+# feather::write_feather(clean_data, "clean_data.feather")
 
-#clean_data %>%
+# clean_data %>%
 #  filter(player_slug == "danny-blum") %>%
 #  filter(card_rarity == "limited") %>%
 #  arrange(hms) %>%
@@ -53,5 +55,3 @@ cleanup_data <- function(sorare_date){
 #  #geom_line(aes(y=fit))+
 #  scale_x_datetime(breaks="2 week")+
 #  theme(axis.text.x = element_text(angle=20))
-
-
