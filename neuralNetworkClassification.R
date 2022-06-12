@@ -53,7 +53,7 @@ val_normalized <- bake(nn_preprocessing, new_data = data_train, all_predictors()
 test_normalized <- bake(nn_preprocessing, new_data = data_test %>% filter(player_slug %in% data_train$player_slug), all_predictors())
 
 nnet_fit <-
-  mlp(epochs = 500, hidden_units = 2, dropout = 0.1) %>%
+  mlp(epochs = 1000, hidden_units = 450, dropout = 0.1) %>%
   set_mode("regression") %>% 
   # Also set engine-specific `verbose` argument to prevent logging the results: 
   set_engine("keras", verbose = 1) %>%
@@ -79,8 +79,8 @@ val_results %>%
   unnest(cols = c(prediction)) %>%
   filter(player_slug == sample_n(val_results %>% distinct(player_slug), 1)$player_slug) %>%
   ggplot(aes(x = owner_since, color = player_slug)) +
-  geom_line(aes(y = EUR), color = "#7f3030") +
   geom_line(aes(y = .pred)) +
+  geom_line(aes(y = EUR), color = "#7f3030") +
   scale_x_date(breaks = "1 week") +
   theme(axis.text.x = element_text(angle = 90))
 

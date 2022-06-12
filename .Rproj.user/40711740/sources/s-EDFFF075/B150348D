@@ -3,7 +3,7 @@
     "path": "~/R Projekte/MLSeminar/randomForrestClassification.R",
     "project_path": "randomForrestClassification.R",
     "type": "r_source",
-    "hash": "1840205123",
+    "hash": "2099948474",
     "contents": "",
     "dirty": false,
     "created": 1655036823925.0,
@@ -12,14 +12,15 @@
     "properties": {
         "tempName": "Untitled1",
         "source_window_id": "",
-        "Source": "Source"
+        "Source": "Source",
+        "rmdVisualCollapsedChunks": ""
     },
     "folds": "",
-    "lastKnownWriteTime": 1655056553,
+    "lastKnownWriteTime": 1655060043,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1655056553011,
+    "last_content_update": 1655060043,
     "read_only": false,
     "read_only_alternatives": []
 }
