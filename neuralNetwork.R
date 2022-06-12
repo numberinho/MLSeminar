@@ -13,11 +13,12 @@ data_test <- clean_data %>%
   inner_join(sample) %>%
   filter(owner_since > "2022-04-01")
 
-rf_settings <- rand_forest(mode = "regression", mtry = 3, trees = 500) %>%
-  set_engine("ranger")
+nn_settings <- mlp(epochs = 100, hidden_units = 5, dropout = 0.1) %>%
+  set_engine("ranger") %>%
+  set_engine("keras", verbose = 1)
 
-randomForrestFit <-
-  rf_settings %>%
+neuralNetFit <-
+  nn_settings %>%
   fit(
     log10(EUR) ~ .,
     data = data_train

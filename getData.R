@@ -62,13 +62,19 @@ fixed_score <- fix_score(gameWeeks, score)
 
 sorare_data <- transfer %>%
   mutate(gameWeek = gameWeek-1) %>%
-  mutate(card_shirt = ifelse(card_shirt == card_serial,T,F)) %>%
   left_join(fixed_score, by = c("gameWeek", "player_slug")) %>%
   mutate(lastScore = replace_na(lastScore, 0),
          lastMins = replace_na(lastMins, 0),
          cumScore = replace_na(cumScore, 0),
          cumMins = replace_na(cumMins, 0)) %>%
   left_join(market_globals %>% mutate(owner_since = owner_since+1), by = "owner_since") %>% #offset "last"
+  mutate(card_shirt = ifelse(card_shirt == card_serial,T,F)) %>%
+  mutate(
+    day = lubridate::day(owner_since),
+    month = lubridate::month(owner_since),
+    quarter = lubridate::quarter(owner_since),
+    year = lubridate::year(owner_since)
+  ) %>%
   select(-player_opta_uuid)
 
 source("clean_outliers.R")
