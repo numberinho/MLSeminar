@@ -74,13 +74,35 @@ test_results %>%
 # simple metric
 test_results %>%
   # filter(player_slug == sample_n(test_results %>% distinct(player_slug), 1)$player_slug) %>%
-  group_by(player_slug) %>%
-  arrange(owner_since) %>%
   mutate(
     goesUP = ifelse(EUR_lag_1 < EUR, 1, 0),
     pgoesUP = ifelse(EUR_lag_1 < .pred, 1, 0)
   ) %>%
-  ungroup() %>%
   count(goesUP == pgoesUP) %>%
   drop_na() %>%
   mutate(n = n / sum(n))
+
+data_test %>% filter(player_slug == "mats-hummels") %>% head(1) %>%
+  mutate(.pred = predict(randomForrestFit))
+
+glob = data_test %>% filter(player_slug == "mats-hummels") %>% head(1);
+lapply(0:10, function(i){
+  tmp <- glob
+  glob$EUR_lag_7 <<- glob$EUR_lag_6
+  glob$EUR_lag_6 <<- glob$EUR_lag_5
+  glob$EUR_lag_5 <<- glob$EUR_lag_4
+  glob$EUR_lag_4 <<- glob$EUR_lag_3
+  glob$EUR_lag_3 <<- glob$EUR_lag_2
+  glob$EUR_lag_2 <<- glob$EUR_lag_1
+  glob$.pred <<- 10^predict(randomForrestFit, glob)$.pred
+  glob$EUR_lag_1 <<- glob$.pred
+  return(tmp)
+}) -> res
+
+res %>% bind_rows() %>% view
+  ggplot(aes(x=owner_since, y = .pred))+
+  geom_line()
+
+
+
+
