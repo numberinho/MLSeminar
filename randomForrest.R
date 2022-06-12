@@ -31,6 +31,7 @@ randomForrestFit <-
     + lastMins
     + cumScore
     + cumMins
+    + day1_meanEUR,
     + eth_exchange
     + trades
     + timeStamp
