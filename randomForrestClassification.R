@@ -14,7 +14,7 @@ data_test <- clean_data %>%
   inner_join(sample) %>%
   filter(owner_since >= "2022-04-01")
 
-rf_settings <- rand_forest(mode = "regression", mtry = 10, trees = 501) %>%
+rf_settings <- rand_forest(mode = "regression", mtry = 5, trees = 501) %>%
   set_engine("ranger")
 
 randomForrestFit <-
@@ -77,8 +77,8 @@ test_results %>%
   group_by(player_slug) %>%
   arrange(owner_since) %>%
   mutate(
-    goesUP = ifelse(lag(EUR) < EUR, 1, 0),
-    pgoesUP = ifelse(lag(EUR) < 10^.pred, 1, 0)
+    goesUP = ifelse(EUR_lag_1 < EUR, 1, 0),
+    pgoesUP = ifelse(EUR_lag_1 < .pred, 1, 0)
   ) %>%
   ungroup() %>%
   count(goesUP == pgoesUP) %>%
