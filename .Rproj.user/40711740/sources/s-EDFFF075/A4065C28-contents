@@ -93,15 +93,25 @@ source("clean_outliers.R")
 
 clean_data <- cleanup_data(sorare_data)
 
-lagEUR <- clean_data %>% group_by(player_slug, owner_since) %>%
-  summarise(day_meanEUR = mean(EUR)) %>%
-  arrange(owner_since) %>%
-  mutate(day1_meanEUR = lag(day_meanEUR)) %>%
-  select(-day_meanEUR) %>%
-  ungroup()
+compute_lagged <- function(data){
+  means <- data %>% group_by(player_slug, owner_since) %>%
+    summarise(EUR_mean = mean(EUR)) %>%
+    arrange(owner_since) %>%
+    mutate(EUR_lag_1 = lag(EUR_mean),
+           EUR_lag_2 = lag(EUR_mean,2),
+           EUR_lag_3 = lag(EUR_mean,3),
+           EUR_lag_4 = lag(EUR_mean,4),
+           EUR_lag_5 = lag(EUR_mean,5),
+           EUR_lag_6 = lag(EUR_mean,6),
+           EUR_lag_7 = lag(EUR_mean,7)
+           ) %>%
+    ungroup()
+  
+  data %>%
+    left_join(means, by = c("owner_since", "player_slug"))
+}
 
-clean_data <- clean_data %>%
-  left_join(lagEUR)
+clean_data <- compute_lagged(clean_data)
 
 feather::write_feather(clean_data, "clean_data.feather")
 

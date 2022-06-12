@@ -32,7 +32,13 @@ randomForrestFit <-
     + lastMins
     + cumScore
     + cumMins
-    + day1_meanEUR
+    + EUR_lag_1
+    + EUR_lag_2
+    + EUR_lag_3
+    + EUR_lag_4
+    + EUR_lag_5
+    + EUR_lag_6
+    + EUR_lag_7
     + eth_exchange
     + trades
     + timeStamp
