@@ -13,9 +13,48 @@ data_test <- clean_data %>%
   inner_join(sample) %>%
   filter(owner_since > "2022-04-01")
 
+nn_preprocessing <- 
+  recipe(
+    EUR ~
+    + player_slug
+    + club_slug
+    + player_position
+    + player_age
+    + card_shirt
+    + owner_number
+    + last_scoreDays
+    + lastScore
+    + lastMins
+    + cumScore
+    + cumMins
+    + eth_exchange
+    + trades
+    + timeStamp
+    + day
+    + month
+    + quarter
+    + year,
+    data = data_train
+  ) %>%
+  step_dummy(c(player_slug, player_position)) %>%
+  step_normalize(c(card_shirt, player_age, owner_number, last_scoreDays, lastScore, lastMins, cumScore, cumMins, eth_exchange,trades, timeStamp, day, month, quarter, year)) %>%
+  prep(training = data_train, retain = TRUE)
+
+# For validation:
+val_normalized <- bake(nn_preprocessing, new_data = data_train, all_predictors())
+# For testing when we arrive at a final model: 
+test_normalized <- bake(nn_preprocessing, new_data = data_test %>% filter(player_slug %in% data_train$player_slug), all_predictors())
+
 nn_settings <- mlp(epochs = 100, hidden_units = 5, dropout = 0.1) %>%
-  set_mode("classification") %>%
+  set_mode("regression") %>%
   set_engine("keras", verbose = 1)
+
+nnet_fit <-
+  mlp(epochs = 100, hidden_units = 5, dropout = 0.1) %>%
+  set_mode("regression") %>% 
+  # Also set engine-specific `verbose` argument to prevent logging the results: 
+  set_engine("keras", verbose = 0) %>%
+  fit(EUR ~ ., data = bake(nn_preprocessing, new_data = NULL))
 
 neuralNetFit <-
   nn_settings %>%

@@ -19,7 +19,25 @@ rf_settings <- rand_forest(mode = "regression", mtry = 3, trees = 500) %>%
 randomForrestFit <-
   rf_settings %>%
   fit(
-    log10(EUR) ~ .,
+    log10(EUR) ~     
+    + player_slug
+    + club_slug
+    + player_position
+    + player_age
+    + card_shirt
+    + owner_number
+    + last_scoreDays
+    + lastScore
+    + lastMins
+    + cumScore
+    + cumMins
+    + eth_exchange
+    + trades
+    + timeStamp
+    + day
+    + month
+    + quarter
+    + year,
     data = data_train
   )
 
