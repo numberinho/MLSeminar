@@ -3,6 +3,13 @@ library(tidymodels)
 
 clean_data <- feather::read_feather("clean_data.feather")
 
+clean_data <- clean_data %>%
+  group_by(player_slug) %>%
+  arrange(owner_since) %>%
+  mutate(goesUP = ifelse(lag(EUR) < EUR,T,F)) %>%
+  mutate(goesUP = as.factor(goesUP)) %>%
+  select(-EUR)
+
 # sample <- distinct(clean_data, player_slug) %>% sample_n(300)
 sample <- distinct(clean_data, player_slug)
 
@@ -15,7 +22,7 @@ data_test <- clean_data %>%
 
 nn_preprocessing <-
     recipe(
-        EUR ~
+      goesUP ~
         +player_slug
         + club_slug
             + player_position
@@ -53,18 +60,20 @@ val_normalized <- bake(nn_preprocessing, new_data = data_train, all_predictors()
 test_normalized <- bake(nn_preprocessing, new_data = data_test %>% filter(player_slug %in% data_train$player_slug), all_predictors())
 
 nnet_fit <-
-    mlp(epochs = 1000, hidden_units = 450, dropout = 0.1) %>%
-    set_mode("regression") %>%
+    mlp(epochs = 100, hidden_units = 20, dropout = 0.1) %>%
+    set_mode("classification") %>%
     # Also set engine-specific `verbose` argument to prevent logging the results:
     set_engine("keras", verbose = 1) %>%
-    fit(EUR ~ ., data = bake(nn_preprocessing, new_data = NULL))
+    fit(goesUP ~ ., data = bake(nn_preprocessing, new_data = NULL))
 
-saveRDS(nnet_fit, "model.RDS")
+model <- keras::load_model_tf("model")
 
+summary(model)
 
 data_test
 val_results <-
     data_test %>%
+  ungroup() %>%
     filter(player_slug %in% data_train$player_slug) %>%
     mutate(prediction = predict(nnet_fit, new_data = test_normalized)) %>%
     bind_rows(data_train)
@@ -76,6 +85,10 @@ val_results %>%
     head(10) %>%
     unnest()
 
+val_results %>%
+  unnest(cols = c(prediction))  %>%
+  mutate(right = goesUP == .pred_class) %>% filter(is.na(right)) %>% head(1000) %>% view
+  count(goesUP == .pred_class) 
 
 
 

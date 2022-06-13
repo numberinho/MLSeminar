@@ -3,61 +3,140 @@ library(tidymodels)
 
 clean_data <- feather::read_feather("clean_data.feather")
 
-# sample <- distinct(clean_data, player_slug) %>% sample_n(300)
-sample <- distinct(clean_data, player_slug)
+model_data <- clean_data %>% select(-EUR_lag_0) # contains the actual sales price
 
-data_train <- clean_data %>%
-  inner_join(sample) %>%
-  filter(owner_since < "2022-04-01")
+initial_split <- initial_split(model_data, prop = 0.75)
 
-data_test <- clean_data %>%
-  inner_join(sample) %>%
-  filter(owner_since >= "2022-04-01")
+train_data <- training(initial_split)
+train_data <- model_data %>% filter(owner_since < "2022-04-01")
 
-rf_settings <- rand_forest(mode = "regression", mtry = 5, trees = 501) %>%
-  set_engine("ranger")
+test_data <- testing(initial_split)
+test_data <- model_data %>% filter(owner_since >= "2022-04-01")
+
+cores <- parallel::detectCores()
+
+rf_settings <- 
+  rand_forest(mtry = 5, trees = 501) %>%
+  set_engine("ranger", num.threads = cores) %>%
+  set_mode("classification")
 
 randomForrestFit <-
   rf_settings %>%
   fit(
-    log10(EUR) ~
-    +player_slug
-    + club_slug
-      + player_position
-      + player_age
-      + daysSinceLastScore # days past last score
-      + lastScore # last scored points
-      + lastMins # last played minutes
-      + cumScore # cumulated score until timepoint
-      + cumMins # cumulated minutes until timepoint
-      + EUR_lag_1
-      + EUR_lag_2
-      + EUR_lag_3
-      + EUR_lag_4
-      + EUR_lag_5
-      + EUR_lag_6
-      + EUR_lag_7
-      + eth_exchange # ETH - EUR exchange ratio
-      + lastPlayerTrades # amount of trades of this player yesterday
-      + daysSinceLastTrade # days since last trade of this player
-      + lastTotalTrades # amount of trades yesterday
-      + timeStamp # integer representing time
-      + day
-      + month
-      + quarter
-      + year,
-    data = data_train
+    EUR_up_0 ~              # did the price rise?
+      + player_slug         # name of player
+    + club_slug           # name of club
+    + player_position     # position of that player (goalkeeper, midfielder...)
+    + player_age          # age of the player
+    + daysSinceLastTrade  # days since last Trade
+    + eth_exchange        # ETH - EUR exchange rate
+    + lastTotalTrades     # last day total Trades of all players
+    + daysSinceLastScore  # days since last score of the player
+    + lastScore           # last score of the player
+    + lastMins            # last mins on pitch of the player
+    + cumScore            # total scored points cumulated
+    + cumMins             # total mins on the pitch cumulated
+    + timeStamp           # continous integer representing time
+    + day                 # continous representing time
+    + month               # continous representing time
+    + quarter             # continous representing time
+    + year                # continous representing time
+    + EUR_lag_1           # price 1 day ago
+    + EUR_lag_2           # price 2 days ago
+    + EUR_lag_3           # price 3 days ago
+    + EUR_lag_4           # price 4 days ago
+    + EUR_lag_5           # price 5 days ago
+    + EUR_lag_6           # price 6 days ago
+    + EUR_lag_7           # price 7 days ago
+    + EUR_up_1            # dummy variable if the price is higher than day before (lagged 1 day)
+    + EUR_up_2            # dummy variable if the price is higher than day before (lagged 2 days)
+    + EUR_up_3            # dummy variable if the price is higher than day before (lagged 3 days)
+    + EUR_up_4            # dummy variable if the price is higher than day before (lagged 4 days)
+    + EUR_up_5            # dummy variable if the price is higher than day before (lagged 5 days)
+    + EUR_up_6            # dummy variable if the price is higher than day before (lagged 6 days)
+    ,data = train_data
   )
 
+tree_rec <- recipe(
+  EUR_up_0 ~              # did the price rise?
+    + player_slug         # name of player
+  + club_slug           # name of club
+  + player_position     # position of that player (goalkeeper, midfielder...)
+  + player_age          # age of the player
+  + daysSinceLastTrade  # days since last Trade
+  + eth_exchange        # ETH - EUR exchange rate
+  + lastTotalTrades     # last day total Trades of all players
+  + daysSinceLastScore  # days since last score of the player
+  + lastScore           # last score of the player
+  + lastMins            # last mins on pitch of the player
+  + cumScore            # total scored points cumulated
+  + cumMins             # total mins on the pitch cumulated
+  + timeStamp           # continous integer representing time
+  + day                 # continous representing time
+  + month               # continous representing time
+  + quarter             # continous representing time
+  + year                # continous representing time
+  + EUR_lag_1           # price 1 day ago
+  + EUR_lag_2           # price 2 days ago
+  + EUR_lag_3           # price 3 days ago
+  + EUR_lag_4           # price 4 days ago
+  + EUR_lag_5           # price 5 days ago
+  + EUR_lag_6           # price 6 days ago
+  + EUR_lag_7           # price 7 days ago
+  + EUR_up_1            # dummy variable if the price is higher than day before (lagged 1 day)
+  + EUR_up_2            # dummy variable if the price is higher than day before (lagged 2 days)
+  + EUR_up_3            # dummy variable if the price is higher than day before (lagged 3 days)
+  + EUR_up_4            # dummy variable if the price is higher than day before (lagged 4 days)
+  + EUR_up_5            # dummy variable if the price is higher than day before (lagged 5 days)
+  + EUR_up_6            # dummy variable if the price is higher than day before (lagged 6 days)
+  ,data = train_data
+) %>%
+  step_dummy(all_nominal(), -all_outcomes())
+
+tree_prep <- prep(tree_rec)
+juiced <- juice(tree_prep)
+
+tune_spec <- rand_forest(
+  mtry = tune(),
+  trees = 500,
+  min_n = tune()
+) %>%
+  set_mode("classification") %>%
+  set_engine("ranger")
+
+
+tune_wf <- workflow() %>%
+  add_recipe(tree_rec) %>%
+  add_model(tune_spec)
+
+set.seed(234)
+trees_folds <- vfold_cv(train_data)
+
+doParallel::registerDoParallel()
+
+set.seed(345)
+tune_res <- tune_grid(
+  tune_wf,
+  resamples = trees_folds,
+  grid = 20
+)
+
+tune_res
+
+
+
+
+######
+
 test_results <-
-  data_test %>%
+  test_data %>%
   filter(player_slug %in% randomForrestFit$preproc$xlevels$player_slug) %>%
   bind_cols(
-    predict(randomForrestFit, new_data = data_test %>% filter(player_slug %in% randomForrestFit$preproc$xlevels$player_slug))
-  ) %>%
-  mutate(.pred = 10^.pred)
+    predict(randomForrestFit, new_data = test_data %>% filter(player_slug %in% randomForrestFit$preproc$xlevels$player_slug))
+  )
 
-test_results %>% metrics(truth = EUR, estimate = .pred)
+
+test_results %>% metrics(truth = EUR_up_0, estimate = .pred_class)
 
 
 test_results %>%
@@ -100,7 +179,7 @@ lapply(0:10, function(i){
 }) -> res
 
 res %>% bind_rows() %>% view
-  ggplot(aes(x=owner_since, y = .pred))+
+ggplot(aes(x=owner_since, y = .pred))+
   geom_line()
 
 

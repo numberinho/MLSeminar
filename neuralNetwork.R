@@ -3,6 +3,8 @@ library(tidymodels)
 
 clean_data <- feather::read_feather("clean_data.feather")
 
+clean_data %>% write_csv("clean_data.csv")
+
 # sample <- distinct(clean_data, player_slug) %>% sample_n(300)
 sample <- distinct(clean_data, player_slug)
 
